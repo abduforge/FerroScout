@@ -1,0 +1,20 @@
+[package]
+name = "ferroscout"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "A local, passive static security scanner for source code and configuration files"
+license = "MIT"
+repository = "https://github.com/abduforge/FerroScout"
+readme = "README.md"
+
+[dependencies]
+clap = { version = "=4.4.18", features = ["derive"] }
+regex = "=1.10.4"
+serde = { version = "=1.0.197", features = ["derive"] }
+serde_json = "=1.0.115"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
