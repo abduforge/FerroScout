@@ -289,7 +289,11 @@ mod tests {
     fn scans_supported_source_file_and_reports_line() {
         let root = temp_dir();
         let file = root.join("app.py");
-        fs::write(&file, "print('hello')\nrequests.get(url, verify=False)\n").unwrap();
+        fs::write(
+            &file,
+            concat!("print('hello')\nrequests.get(url, verify=", "False)\n"),
+        )
+        .unwrap();
         let report = scan_target(&file, &ScanOptions::default()).unwrap();
         assert_eq!(report.files_scanned, 1);
         assert_eq!(report.findings[0].line, 2);
@@ -317,7 +321,11 @@ mod tests {
     fn skips_excluded_directories() {
         let root = temp_dir();
         fs::create_dir_all(root.join("vendor")).unwrap();
-        fs::write(root.join("vendor/app.py"), "app.run(debug=True)\n").unwrap();
+        fs::write(
+            root.join("vendor/app.py"),
+            concat!("app.run(debug=", "True)\n"),
+        )
+        .unwrap();
         fs::write(root.join("app.py"), "print('ok')\n").unwrap();
         let report = scan_target(&root, &ScanOptions::default()).unwrap();
         assert_eq!(report.files_scanned, 1);

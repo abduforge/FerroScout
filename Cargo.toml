@@ -1,9 +1,9 @@
 [package]
 name = "ferroscout"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.70"
-description = "A local, passive static security scanner for source code and configuration files"
+description = "A local-first static security scanner with text, JSON, and SARIF reports"
 license = "MIT"
 repository = "https://github.com/abduforge/FerroScout"
 readme = "README.md"

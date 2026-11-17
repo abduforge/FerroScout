@@ -1,0 +1,23 @@
+title: Share an idea
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What would you like FerroScout to do?
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Possible trade-offs
+      description: Think about false positives, runtime, and complexity.
+    validations:
+      required: false

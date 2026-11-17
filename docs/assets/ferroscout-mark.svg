@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">FerroScout</title>
+  <desc id="desc">A compass needle inside a shield.</desc>
+  <defs>
+    <linearGradient id="bg" x1="18" y1="12" x2="142" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#152b45"/>
+      <stop offset="1" stop-color="#091521"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="30" y1="18" x2="130" y2="145" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="needle" x1="57" y1="40" x2="105" y2="121" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fafc"/>
+      <stop offset=".5" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <path d="M80 8 137 29v43c0 37-23 65-57 80C46 137 23 109 23 72V29L80 8Z" fill="url(#bg)" stroke="url(#edge)" stroke-width="5"/>
+  <circle cx="80" cy="79" r="43" fill="none" stroke="#456078" stroke-width="2"/>
+  <path d="m80 36 9 39-9 7-9-7 9-39Z" fill="url(#needle)"/>
+  <path d="m80 120-9-39 9-7 9 7-9 39Z" fill="#f97316"/>
+  <circle cx="80" cy="79" r="7" fill="#f8fafc" stroke="#0ea5e9" stroke-width="3"/>
+  <path d="M80 23v9M80 126v9M24 79h9M127 79h9" stroke="#bae6fd" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -50,3 +50,17 @@ fn invalid_path_exits_two() {
         .unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+#[test]
+fn sarif_output_is_valid_json() {
+    let path = temp_file("sarif.py", "print('hello')\n");
+    let output = Command::new(env!("CARGO_BIN_EXE_ferroscout"))
+        .args(["scan", path.to_str().unwrap(), "--format", "sarif"])
+        .output()
+        .unwrap();
+    fs::remove_file(path).unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(document["version"], "2.1.0");
+    assert_eq!(document["runs"][0]["tool"]["driver"]["name"], "FerroScout");
+}

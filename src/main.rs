@@ -3,7 +3,7 @@
 use clap::Parser;
 use ferroscout::cli::{Cli, Commands, OutputFormat, SeverityArg};
 use ferroscout::models::Severity;
-use ferroscout::report::{render_json, render_text};
+use ferroscout::report::{render_json, render_sarif, render_text};
 use ferroscout::rules::rule_catalog;
 use ferroscout::scanner::{filter_findings, scan_target, ScanOptions, MAX_ALLOWED_FILE_SIZE};
 use std::process::ExitCode;
@@ -57,6 +57,8 @@ fn run(cli: Cli) -> Result<u8, String> {
                 OutputFormat::Text => render_text(&report),
                 OutputFormat::Json => render_json(&report)
                     .map_err(|error| format!("cannot serialize JSON report: {error}"))?,
+                OutputFormat::Sarif => render_sarif(&report)
+                    .map_err(|error| format!("cannot serialize SARIF report: {error}"))?,
             };
             println!("{rendered}");
             if !report.findings.is_empty() {

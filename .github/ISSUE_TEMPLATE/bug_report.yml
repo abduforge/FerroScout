@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible problem with FerroScout.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include real credentials, private keys, private source code, or personal data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior.
+      placeholder: What did FerroScout do?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use a small synthetic example when possible.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: FerroScout version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and architecture
+      placeholder: Linux x86_64
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Redact tokens, passwords, IPs, and other sensitive values before posting.
+      render: text
+    validations:
+      required: false

@@ -1,0 +1,51 @@
+name: FerroScout Code Scanning
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: ferroscout-sarif-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan repository and upload SARIF
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+      - name: Build FerroScout
+        run: |
+          cargo generate-lockfile
+          cargo build --release --locked
+      - name: Create SARIF report
+        shell: bash
+        run: |
+          set +e
+          ./target/release/ferroscout scan . \
+            --format sarif \
+            --exclude tests \
+            --exclude src/rules \
+            > ferroscout.sarif
+          result=$?
+          set -e
+          if [ "$result" -gt 1 ]; then
+            echo "FerroScout scan failed with exit code $result" >&2
+            exit "$result"
+          fi
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ferroscout.sarif
+          category: ferroscout

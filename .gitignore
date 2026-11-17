@@ -1,5 +1,8 @@
 /target/
 **/*.rs.bk
+Cargo.lock.tmp
+ferroscout.sarif
+results.sarif
 .env
 .env.*
 !.env.example

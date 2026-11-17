@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 - 2026-11-17
+
+- Add SARIF 2.1.0 output for integration with GitHub Code Scanning.
+- Add a repository scanning workflow that uploads SARIF results on pushes to `main`.
+- Refresh the English and Russian README with command examples, rule descriptions, limitations, privacy notes, and release badges.
+- Add a project logo and repository contribution files.
+- Add issue forms, a pull request template, CODEOWNERS, and release-note categories.
+- Add Dependabot updates for Cargo dependencies and GitHub Actions.
+- Add a release workflow that packages the Linux x86_64 binary with a SHA-256 checksum.
+- Keep the scanner local, passive, and read-only.
+
 ## 0.1.0
 
 - Initial local, read-only static security scanner.

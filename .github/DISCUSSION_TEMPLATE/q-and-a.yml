@@ -1,0 +1,27 @@
+title: Ask a question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use synthetic examples. Do not post real credentials, private keys, private source code, or personal data.
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: Describe the command, rule, or behavior you need help with.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and expected behavior
+      description: Include a minimal reproducible example when possible.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: FerroScout version
+      placeholder: 0.2.0
+    validations:
+      required: false

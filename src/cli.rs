@@ -5,8 +5,8 @@ use std::path::PathBuf;
 #[command(
     name = "ferroscout",
     version,
-    about = "A local, passive static security scanner",
-    long_about = "FerroScout inspects source and configuration files locally. It does not execute scanned code or contact remote systems. Findings are heuristic and require developer review."
+    about = "A local, passive static security scanner with JSON and SARIF reports",
+    long_about = "FerroScout inspects source and configuration files locally. It does not execute scanned code or contact remote systems. Findings are heuristic and require developer review. Reports are available as text, JSON, or SARIF 2.1.0."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -19,7 +19,7 @@ pub enum Commands {
     Scan {
         /// File or directory to inspect.
         path: PathBuf,
-        /// Output format.
+        /// Output format (text, json, or sarif).
         #[arg(long, value_enum, default_value = "text")]
         format: OutputFormat,
         /// Show findings at this severity or higher.
@@ -40,6 +40,7 @@ pub enum Commands {
 pub enum OutputFormat {
     Text,
     Json,
+    Sarif,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]

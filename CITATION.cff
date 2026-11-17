@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If FerroScout helps your work, please cite the repository."
+title: "FerroScout"
+version: "0.2.0"
+date-released: "2026-11-17"
+repository-code: "https://github.com/abduforge/FerroScout"
+license: "MIT"
+type: software

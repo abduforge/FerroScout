@@ -1,0 +1,21 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: Security checks and features
+      labels:
+        - security
+        - enhancement
+    - title: Bug fixes
+      labels:
+        - bug
+    - title: Maintenance
+      labels:
+        - dependencies
+        - documentation
+    - title: Other changes
+      labels:
+        - "*"

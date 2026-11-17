@@ -9,20 +9,26 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  quality:
     name: Format, test, lint, and build
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - name: Generate lockfile
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+      - name: Resolve locked dependencies
         run: cargo generate-lockfile
-      - name: Format source
+      - name: Format Rust source
         run: cargo fmt --all
       - name: Check formatting
         run: cargo fmt --all -- --check
