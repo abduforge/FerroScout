@@ -3,7 +3,7 @@
 use clap::Parser;
 use ferroscout::cli::{Cli, Commands, OutputFormat, SeverityArg};
 use ferroscout::models::Severity;
-use ferroscout::report::{render_json, render_sarif, render_text};
+use ferroscout::report::{render_json, render_markdown, render_sarif, render_text};
 use ferroscout::rules::rule_catalog;
 use ferroscout::scanner::{filter_findings, scan_target, ScanOptions, MAX_ALLOWED_FILE_SIZE};
 use std::process::ExitCode;
@@ -32,12 +32,23 @@ fn run(cli: Cli) -> Result<u8, String> {
             format,
             severity,
             exclude,
+            exclude_rule,
             max_file_size,
         }) => {
             if max_file_size == 0 || max_file_size > MAX_ALLOWED_FILE_SIZE {
                 return Err(format!(
                     "--max-file-size must be between 1 and {MAX_ALLOWED_FILE_SIZE} bytes"
                 ));
+            }
+            for rule in &exclude_rule {
+                if !rule_catalog()
+                    .iter()
+                    .any(|(known, _)| *known == rule.as_str())
+                {
+                    return Err(format!(
+                        "unknown rule ID '{rule}'. Run 'ferroscout rules' to list valid IDs."
+                    ));
+                }
             }
             let options = ScanOptions {
                 excludes: exclude,
@@ -50,7 +61,8 @@ fn run(cli: Cli) -> Result<u8, String> {
                 SeverityArg::Medium => Severity::Medium,
                 SeverityArg::High => Severity::High,
             });
-            filter_findings(&mut report.findings, minimum);
+            report.filtered_findings +=
+                filter_findings(&mut report.findings, minimum, &exclude_rule);
             report.refresh_status();
 
             let rendered = match format {
@@ -59,6 +71,7 @@ fn run(cli: Cli) -> Result<u8, String> {
                     .map_err(|error| format!("cannot serialize JSON report: {error}"))?,
                 OutputFormat::Sarif => render_sarif(&report)
                     .map_err(|error| format!("cannot serialize SARIF report: {error}"))?,
+                OutputFormat::Markdown => render_markdown(&report),
             };
             println!("{rendered}");
             if !report.findings.is_empty() {

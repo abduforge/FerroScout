@@ -5,80 +5,70 @@
 <h1 align="center">FerroScout</h1>
 
 <p align="center">
-  <strong>Find risky patterns. See the evidence. Fix the root cause.</strong><br>
+  <strong>Find risky patterns. Keep the evidence. Review the fix.</strong><br>
   A local-first static security scanner written in Rust.
 </p>
 
 <p align="center">
   <a href="https://github.com/abduforge/FerroScout/actions/workflows/ci.yml"><img src="https://github.com/abduforge/FerroScout/actions/workflows/ci.yml/badge.svg" alt="Rust CI"></a>
-  <a href="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml"><img src="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml/badge.svg" alt="FerroScout Code Scanning"></a>
+  <a href="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml"><img src="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml/badge.svg" alt="Code scanning"></a>
   <a href="https://github.com/abduforge/FerroScout/releases"><img src="https://img.shields.io/github/v/release/abduforge/FerroScout?display_name=tag&sort=semver" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/abduforge/FerroScout" alt="MIT license"></a>
-  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.70%2B-orange?logo=rust" alt="Rust 1.70 or newer"></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-stable-orange?logo=rust" alt="Stable Rust"></a>
   <a href="https://github.com/abduforge/FerroScout/issues"><img src="https://img.shields.io/github/issues/abduforge/FerroScout" alt="Open issues"></a>
 </p>
 
 <p align="center">
   <a href="README_RU.md">Русская версия</a> ·
   <a href="https://github.com/abduforge/FerroScout/releases">Releases</a> ·
-  <a href="https://github.com/abduforge/FerroScout/issues">Issues</a>
+  <a href="https://github.com/abduforge/FerroScout/discussions">Discussions</a>
 </p>
 
 ---
 
-FerroScout walks through source and configuration files, checks them against a small set of security rules, and prints findings with file locations, evidence, confidence, and remediation notes. It can also export **SARIF 2.1.0** for GitHub code scanning workflows.
+FerroScout scans source code and configuration files for security-sensitive patterns. Findings include a rule ID, severity, confidence, file location, evidence, potential impact, and a remediation suggestion.
 
-It is deliberately local and passive: scanned programs are never executed and files are never changed. The CLI itself makes no network requests. The optional GitHub Actions workflow uploads a SARIF findings report (including paths, line numbers, and sanitized evidence excerpts) to GitHub Code Scanning.
+The scanner runs locally and reads files without executing them. It does not contact remote services. Reports can be printed as text, Markdown, JSON, or SARIF 2.1.0.
 
-> **A note on accuracy:** FerroScout 0.2.0 is a rule-based review aid, not a full language-aware SAST engine. It does not prove exploitability or understand every cross-file data flow. Treat findings as leads for a human review. A clean scan is not a security guarantee.
+> **Scope:** FerroScout is a small heuristic scanner, not a full language-aware SAST engine. A match is a lead for manual review, not proof of exploitability. A clean scan is not a security guarantee.
 
 ## At a glance
 
 | | |
 |---|---|
-| **Language** | Rust (stable, edition 2021) |
-| **Platform** | Linux |
-| **Analysis** | Local, static, read-only |
-| **Reports** | Human-readable text, JSON, SARIF 2.1.0 |
-| **Rules** | 10 rule groups |
-| **License** | MIT |
+| Language | Rust, edition 2021 |
+| Platform | Linux |
+| Operation | Local, passive, read-only |
+| Reports | Text · Markdown · JSON · SARIF 2.1.0 |
+| Built-in rule groups | 10 |
+| License | MIT |
 
-## Quick start
+## Get started
 
 ### Build from source
 
-Install a stable Rust toolchain, then:
+Install stable Rust, then run:
 
 ```bash
 git clone https://github.com/abduforge/FerroScout.git
 cd FerroScout
 cargo generate-lockfile
-cargo build --release
+cargo build --release --locked
 ```
 
-The binary will be at `target/release/ferroscout`.
+The binary is `target/release/ferroscout`.
 
-### Install a release binary
+### Download a release
 
-Linux x86_64 archives and SHA-256 checksums are published on the [Releases page](https://github.com/abduforge/FerroScout/releases). Download the matching `.tar.gz` and `.sha256` files, then:
+Linux x86_64 archives and SHA-256 checksums are published on the [Releases page](https://github.com/abduforge/FerroScout/releases). Verify the downloaded archive before extracting it:
 
 ```bash
-sha256sum -c ferroscout-v0.2.0-x86_64-unknown-linux-gnu.tar.gz.sha256
-tar -xzf ferroscout-v0.2.0-x86_64-unknown-linux-gnu.tar.gz
+sha256sum -c ferroscout-v0.3.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+tar -xzf ferroscout-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
 install -Dm755 ferroscout/ferroscout ~/.local/bin/ferroscout
 ```
 
-### First scan
-
-```bash
-./target/release/ferroscout scan ./path/to/project
-```
-
-To make the binary available from your shell, copy it into a directory on your `PATH`:
-
-```bash
-install -Dm755 target/release/ferroscout ~/.local/bin/ferroscout
-```
+Make sure `~/.local/bin` is in your `PATH`.
 
 ## Usage
 
@@ -89,106 +79,122 @@ ferroscout scan ./project
 # Scan one file
 ferroscout scan ./src/main.rs
 
-# Machine-readable JSON
-ferroscout scan ./project --format json
+# Save a Markdown report
+ferroscout scan ./project --format markdown > ferroscout-report.md
 
-# GitHub Code Scanning-compatible SARIF
+# Produce JSON or SARIF
+ferroscout scan ./project --format json > ferroscout-report.json
 ferroscout scan ./project --format sarif > ferroscout.sarif
 
-# Keep Medium and High severity findings
+# Keep Medium and High findings
 ferroscout scan ./project --severity medium
 
-# Exclude generated or test data (repeat the option as needed)
+# Exclude a known noisy rule (repeatable)
+ferroscout scan ./project --exclude-rule FS-TLS-001
+
+# Exclude generated or fixture directories
 ferroscout scan ./project --exclude target --exclude fixtures
 
-# Set a per-file limit in bytes (maximum: 16 MiB)
+# Set the per-file size limit (bytes; maximum 16 MiB)
 ferroscout scan ./project --max-file-size 1048576
 
 # List the rules included in this build
 ferroscout rules
 ```
 
-Run `ferroscout --help` for the complete command reference.
+Use `ferroscout --help` for the complete CLI reference.
 
 ### Exit codes
 
 | Code | Meaning |
 |---:|---|
-| `0` | No selected findings; scan had sufficient context |
+| `0` | No findings passed the selected filters and the scan had sufficient context |
 | `1` | One or more findings were reported |
 | `2` | Scan error or insufficient context |
 
-This makes FerroScout usable in scripts and CI. A finding is not automatically a CI failure unless your workflow chooses to treat exit code `1` as one.
+This makes FerroScout usable in scripts and CI. A workflow decides whether a finding should fail a build.
 
-## Security checks
+## Managing known exceptions
 
-| Rule | Area | What the rule looks for |
+A finding can be suppressed for the next line with a source comment. The directive must name a rule and include a reason:
+
+```python
+# ferroscout:ignore-next-line FS-TLS-001 -- local test server uses a test certificate
+requests.get(url, verify=False)
+```
+
+JavaScript and Rust comments use the same directive:
+
+```javascript
+// ferroscout:ignore-next-line FS-XSS-001 -- value is sanitized by the wrapper above
+container.innerHTML = sanitizedValue
+```
+
+FerroScout accepts full-line comments starting with `//`, `#`, `/*`, `<!--`, or SQL `--`. It does not accept an empty reason, an unknown rule ID, or a directive embedded inside a string. Use `*` only when the same documented exception genuinely applies to every rule on the next line.
+
+The report shows how many findings were suppressed by source comments. Command-line filters are counted separately. Suppression does not change the source file.
+
+## Built-in checks
+
+| Rule | Area | Looks for |
 |---|---|---|
 | `FS-SECRET-001` | Secrets | Credential-like assignments, bearer tokens, and private-key markers |
-| `FS-XSS-001` | XSS | A known untrusted-input marker close to a dynamic HTML sink |
-| `FS-INJECT-001` | Injection | Dynamic SQL construction and selected shell execution patterns |
+| `FS-XSS-001` | XSS | Untrusted-input markers near dynamic HTML sinks |
+| `FS-INJECT-001` | Injection | Dynamic SQL construction and selected shell-command patterns |
 | `FS-PATH-001` | Path traversal | Untrusted-input markers near filesystem operations |
 | `FS-SSRF-001` | SSRF | User-controlled values near server-side request calls |
-| `FS-CORS-001` | CORS | Reflected origins in a file that also enables credentials |
+| `FS-CORS-001` | CORS | Reflected origins in configurations that also enable credentials |
 | `FS-DESER-001` | Deserialization | Selected unsafe deserialization APIs |
 | `FS-TLS-001` | TLS | Explicitly disabled certificate verification |
-| `FS-DEBUG-001` | Debug exposure | Common debug-mode settings |
+| `FS-DEBUG-001` | Debug | Common debug-mode settings |
 | `FS-CRYPTO-001` | Cryptography | Selected weak password-hash and security-sensitive randomness patterns |
 
-### What a finding contains
+These checks are intentionally conservative and mostly line-oriented. They do not build full syntax trees or prove that input is attacker-controlled.
 
-Each result includes a rule ID, severity, confidence, file path, line number, evidence excerpt, explanation, potential impact, and a remediation suggestion. Credential-like values are redacted in evidence output.
+## GitHub Code Scanning
 
-The rules are intentionally conservative and line-oriented. For example, an `innerHTML` assignment alone is not enough to establish XSS; the current XSS rule also looks for a nearby untrusted-input marker and a lack of a nearby sanitizer marker. This is still a heuristic, not full taint analysis.
-
-## GitHub Code Scanning (SARIF)
-
-FerroScout can write SARIF 2.1.0:
+FerroScout can emit SARIF 2.1.0:
 
 ```bash
 ferroscout scan . --format sarif > ferroscout.sarif
 ```
 
-The repository includes a workflow at `.github/workflows/code-scanning.yml` that runs FerroScout on pushes to `main` and uploads its SARIF report to GitHub Code Scanning. Repository code-scanning features must be available/enabled for the upload to appear in the **Security** tab. The workflow excludes `tests` and `src/rules` because those directories intentionally contain synthetic vulnerable examples used to test the detector.
+The optional `.github/workflows/code-scanning.yml` workflow builds the scanner, creates a SARIF report, and uploads it to GitHub Code Scanning. The workflow excludes `tests` and `src/rules`, which contain synthetic fixtures and rule implementation patterns. Review the workflow before enabling it for sensitive repositories: SARIF contains paths, line numbers, and redacted evidence excerpts.
 
-You can also upload SARIF from your own workflow using `github/codeql-action/upload-sarif` and grant the job `security-events: write` permission.
+## Privacy and file handling
 
-## Scope and privacy
-
-- Reads files on the local machine; the CLI itself makes no network requests.
-- The optional Code Scanning workflow uploads SARIF findings to GitHub. SARIF contains paths, line numbers, and evidence excerpts; secret redaction is heuristic, not a guarantee. Review the workflow before using it on sensitive repositories.
-- Never executes scanned programs, scripts, shell commands, or build steps.
-- Does not modify or delete scanned files.
-- Skips symbolic links during directory traversal and rejects a symbolic link as the scan target.
-- Skips binary files and files larger than the configured limit (2 MiB by default; hard maximum 16 MiB).
-- Scans common source and configuration extensions, plus selected files such as `.env`, `Dockerfile`, `.http`, and `.har`.
-- Excludes common generated directories by default, including `.git`, `target`, `node_modules`, `vendor`, `dist`, and virtual environments.
-- Redacts credential-like values in finding evidence. Do not use this as a reason to commit secrets.
+- The CLI reads files locally and does not make network requests.
+- It does not run scanned programs, scripts, shell commands, or build steps.
+- It does not modify or delete scanned files.
+- It skips symbolic links during directory traversal and rejects a symbolic link as the scan target.
+- It skips binary files and files over the configured size limit (2 MiB by default; 16 MiB maximum).
+- It recognizes common source and configuration extensions, plus selected files such as `.env`, `Dockerfile`, `.http`, and `.har`.
+- It skips common generated directories by default, including `.git`, `target`, `node_modules`, `vendor`, `dist`, and virtual environments.
+- Credential-like values are redacted in evidence. Redaction is heuristic; do not commit secrets.
 
 ## Limitations
 
-FerroScout 0.2.0 uses regular expressions and nearby-line context. It does not build complete ASTs, perform interprocedural or cross-file taint analysis, resolve framework configuration, contact services, or verify authorization behavior. It therefore does not claim reliable IDOR detection. A rule match needs context, and the absence of a match does not establish that code is safe.
+FerroScout uses regular expressions and nearby-line context. It does not perform complete AST analysis, interprocedural or cross-file taint analysis, framework-aware configuration resolution, dynamic testing, or authorization analysis. It does not claim reliable IDOR detection. A rule match needs context, and no match does not establish that code is safe.
 
 ## Development
 
 ```bash
-cargo generate-lockfile
 cargo fmt --all -- --check
 cargo test --all-targets --locked
 cargo clippy --all-targets --locked -- -D warnings
 cargo build --release --locked
 ```
 
-Use synthetic fixtures only. Never put real passwords, access tokens, private keys, or customer data in tests or examples. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Use synthetic fixtures only. Never add real passwords, tokens, private keys, or user data to tests. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-## Project links
+## Project files
 
 - [Changelog](CHANGELOG.md)
 - [Security policy](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 - [Support](SUPPORT.md)
 - [Report a bug](https://github.com/abduforge/FerroScout/issues/new/choose)
-- [Releases](https://github.com/abduforge/FerroScout/releases)
+- [Discussions](https://github.com/abduforge/FerroScout/discussions)
 
 ## License
 

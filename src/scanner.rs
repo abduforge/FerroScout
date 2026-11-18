@@ -53,6 +53,8 @@ pub fn scan_target(target: &Path, options: &ScanOptions) -> io::Result<ScanRepor
         status: crate::models::ScanStatus::InsufficientContext,
         files_scanned: 0,
         entries_skipped: 0,
+        suppressed_findings: 0,
+        filtered_findings: 0,
         findings: Vec::new(),
         scan_errors: Vec::new(),
     };
@@ -202,7 +204,53 @@ fn scan_one_file(path: &Path, max_file_size: u64, report: &mut ScanReport) {
 
     let contents = String::from_utf8_lossy(&bytes);
     report.files_scanned += 1;
-    report.findings.extend(rules::scan_file(path, &contents));
+    let lines: Vec<&str> = contents.lines().collect();
+    for finding in rules::scan_file(path, &contents) {
+        if is_suppressed(&lines, finding.line, &finding.rule_id) {
+            report.suppressed_findings += 1;
+        } else {
+            report.findings.push(finding);
+        }
+    }
+}
+
+/// A suppression must be a full-line comment, name an exact rule ID (or `*`),
+/// and include a reason. Supported comment starts: `//`, `#`, `/*`, `<!--`, `--`.
+/// Example: `# ferroscout:ignore-next-line FS-TLS-001 -- local test fixture`
+fn directive_matches(line: &str, rule_id: &str) -> bool {
+    let trimmed = line.trim_start();
+    let comment = ["//", "#", "/*", "<!--", "--"]
+        .iter()
+        .find_map(|marker| trimmed.strip_prefix(*marker))
+        .map(str::trim_start);
+    let Some(comment) = comment else {
+        return false;
+    };
+    let Some(remainder) = comment.strip_prefix("ferroscout:ignore-next-line") else {
+        return false;
+    };
+    if !remainder.chars().next().is_some_and(char::is_whitespace) {
+        return false;
+    }
+    let Some((rules, reason)) = remainder.split_once(" -- ") else {
+        return false;
+    };
+    if reason.trim().is_empty() {
+        return false;
+    }
+    rules
+        .split_whitespace()
+        .any(|candidate| candidate == rule_id || candidate == "*")
+}
+
+fn is_suppressed(lines: &[&str], finding_line: usize, rule_id: &str) -> bool {
+    let Some(current_index) = finding_line.checked_sub(1) else {
+        return false;
+    };
+    current_index
+        .checked_sub(1)
+        .and_then(|index| lines.get(index))
+        .is_some_and(|line| directive_matches(line, rule_id))
 }
 
 fn is_supported_file(path: &Path) -> bool {
@@ -263,10 +311,18 @@ fn is_supported_file(path: &Path) -> bool {
     )
 }
 
-pub fn filter_findings(findings: &mut [Finding], minimum: Option<Severity>) {
-    if let Some(minimum) = minimum {
-        findings.retain(|finding| finding.severity.rank() >= minimum.rank());
-    }
+pub fn filter_findings(
+    findings: &mut Vec<Finding>,
+    minimum: Option<Severity>,
+    excluded_rules: &[String],
+) -> usize {
+    let before = findings.len();
+    findings.retain(|finding| {
+        let excluded_by_rule = excluded_rules.iter().any(|rule| rule == &finding.rule_id);
+        let below_minimum = minimum.is_some_and(|minimum| finding.severity.rank() < minimum.rank());
+        !excluded_by_rule && !below_minimum
+    });
+    before - findings.len()
 }
 
 #[cfg(test)]
@@ -341,6 +397,43 @@ mod tests {
             report.status,
             crate::models::ScanStatus::InsufficientContext
         );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn next_line_suppression_works_and_requires_a_reason() {
+        let root = temp_dir();
+        let file = root.join("app.py");
+        fs::write(&file, "# ferroscout:ignore-next-line FS-TLS-001 -- local test fixture\nrequests.get(url, verify=False)\n").unwrap();
+        let report = scan_target(&file, &ScanOptions::default()).unwrap();
+        assert!(report.findings.is_empty());
+        assert_eq!(report.suppressed_findings, 1);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn suppression_without_reason_does_not_hide_a_finding() {
+        let root = temp_dir();
+        let file = root.join("app.py");
+        fs::write(
+            &file,
+            "# ferroscout:ignore-next-line FS-TLS-001\nrequests.get(url, verify=False)\n",
+        )
+        .unwrap();
+        let report = scan_target(&file, &ScanOptions::default()).unwrap();
+        assert_eq!(report.findings.len(), 1);
+        assert_eq!(report.suppressed_findings, 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn suppression_directive_inside_a_string_does_not_suppress() {
+        let root = temp_dir();
+        let file = root.join("app.py");
+        fs::write(&file, "message = '# ferroscout:ignore-next-line FS-TLS-001 -- not a comment'\nrequests.get(url, verify=False)\n").unwrap();
+        let report = scan_target(&file, &ScanOptions::default()).unwrap();
+        assert_eq!(report.findings.len(), 1);
+        assert_eq!(report.suppressed_findings, 0);
         fs::remove_dir_all(root).unwrap();
     }
 

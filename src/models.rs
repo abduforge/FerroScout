@@ -57,6 +57,10 @@ pub struct ScanReport {
     pub status: ScanStatus,
     pub files_scanned: usize,
     pub entries_skipped: usize,
+    /// Findings skipped because a source file contains a valid suppression directive.
+    pub suppressed_findings: usize,
+    /// Findings removed by command-line severity or rule filters.
+    pub filtered_findings: usize,
     pub findings: Vec<Finding>,
     pub scan_errors: Vec<String>,
 }

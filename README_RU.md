@@ -11,37 +11,37 @@
 
 <p align="center">
   <a href="https://github.com/abduforge/FerroScout/actions/workflows/ci.yml"><img src="https://github.com/abduforge/FerroScout/actions/workflows/ci.yml/badge.svg" alt="Rust CI"></a>
-  <a href="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml"><img src="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml/badge.svg" alt="FerroScout Code Scanning"></a>
-  <a href="https://github.com/abduforge/FerroScout/releases"><img src="https://img.shields.io/github/v/release/abduforge/FerroScout?display_name=tag&sort=semver" alt="Последний релиз"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/abduforge/FerroScout" alt="Лицензия MIT"></a>
-  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.70%2B-orange?logo=rust" alt="Rust 1.70 или новее"></a>
+  <a href="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml"><img src="https://github.com/abduforge/FerroScout/actions/workflows/code-scanning.yml/badge.svg" alt="Code Scanning"></a>
+  <a href="https://img.shields.io/github/v/release/abduforge/FerroScout?display_name=tag&sort=semver"><img src="https://img.shields.io/github/v/release/abduforge/FerroScout?display_name=tag&sort=semver" alt="Последний релиз"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/abduforge/FerroScout" alt="MIT license"></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-stable-orange?logo=rust" alt="Stable Rust"></a>
   <a href="https://github.com/abduforge/FerroScout/issues"><img src="https://img.shields.io/github/issues/abduforge/FerroScout" alt="Открытые Issues"></a>
 </p>
 
 <p align="center">
   <a href="README.md">English version</a> ·
   <a href="https://github.com/abduforge/FerroScout/releases">Релизы</a> ·
-  <a href="https://github.com/abduforge/FerroScout/issues">Обсуждение ошибок</a>
+  <a href="https://github.com/abduforge/FerroScout/discussions">Обсуждения</a>
 </p>
 
 ---
 
-FerroScout обходит исходный код и конфигурационные файлы, проверяет их по набору правил безопасности и выводит найденные совпадения с путём к файлу, номером строки, доказательством, уровнем уверенности и советом по исправлению. Также он умеет создавать отчёты **SARIF 2.1.0** для GitHub Code Scanning.
+FerroScout проверяет исходный код и конфигурационные файлы по набору правил безопасности. Каждая находка содержит ID правила, критичность, уверенность, путь и номер строки, доказательство, возможное влияние и совет по исправлению.
 
-Программа работает локально и пассивно: не запускает проверяемые программы и не изменяет файлы. CLI сам не выполняет сетевых запросов. Необязательный workflow GitHub Actions загружает SARIF-отчёт (пути, номера строк и очищенные фрагменты доказательств) в GitHub Code Scanning.
+Сканер работает локально и только читает файлы: он не запускает проверяемые программы и не обращается к удалённым сервисам. Отчёты доступны в форматах text, Markdown, JSON и SARIF 2.1.0.
 
-> **О точности:** FerroScout 0.2.0 — rule-based инструмент для помощи при проверке кода, а не полноценный языковой SAST-анализатор. Он не доказывает возможность эксплуатации и не понимает все межфайловые потоки данных. Считай находки поводом для ручной проверки. Чистый отчёт не гарантирует безопасность.
+> **О точности:** FerroScout — небольшой эвристический анализатор, а не полноценный языковой SAST. Совпадение правила — повод для ручной проверки, а не доказательство эксплуатации. Чистый отчёт не гарантирует безопасность.
 
 ## Кратко о проекте
 
 | | |
 |---|---|
-| **Язык** | Rust (stable, edition 2021) |
-| **Платформа** | Linux |
-| **Анализ** | Локальный, статический, только чтение |
-| **Форматы отчёта** | Текст, JSON, SARIF 2.1.0 |
-| **Правила** | 10 групп проверок |
-| **Лицензия** | MIT |
+| Язык | Rust, edition 2021 |
+| Платформа | Linux |
+| Режим | Локальный, пассивный, только чтение |
+| Отчёты | Text · Markdown · JSON · SARIF 2.1.0 |
+| Группы правил | 10 |
+| Лицензия | MIT |
 
 ## Быстрый старт
 
@@ -53,32 +53,22 @@ FerroScout обходит исходный код и конфигурацион�
 git clone https://github.com/abduforge/FerroScout.git
 cd FerroScout
 cargo generate-lockfile
-cargo build --release
+cargo build --release --locked
 ```
 
 Бинарный файл появится в `target/release/ferroscout`.
 
-### Установка готового релиза
+### Установка релиза
 
-Архивы для Linux x86_64 и контрольные суммы SHA-256 публикуются на странице [Releases](https://github.com/abduforge/FerroScout/releases). Скачай подходящие `.tar.gz` и `.sha256`, затем выполни:
+Архивы Linux x86_64 и SHA-256 публикуются на странице [Releases](https://github.com/abduforge/FerroScout/releases). После скачивания проверь архив:
 
 ```bash
-sha256sum -c ferroscout-v0.2.0-x86_64-unknown-linux-gnu.tar.gz.sha256
-tar -xzf ferroscout-v0.2.0-x86_64-unknown-linux-gnu.tar.gz
+sha256sum -c ferroscout-v0.3.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+tar -xzf ferroscout-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
 install -Dm755 ferroscout/ferroscout ~/.local/bin/ferroscout
 ```
 
-### Первый запуск
-
-```bash
-./target/release/ferroscout scan ./путь/к/проекту
-```
-
-Чтобы запускать программу из любого каталога, скопируй её в директорию из `PATH`:
-
-```bash
-install -Dm755 target/release/ferroscout ~/.local/bin/ferroscout
-```
+Убедись, что `~/.local/bin` есть в `PATH`.
 
 ## Использование
 
@@ -89,22 +79,26 @@ ferroscout scan ./project
 # Проверить один файл
 ferroscout scan ./src/main.rs
 
-# Отчёт в JSON
-ferroscout scan ./project --format json
+# Сохранить Markdown-отчёт
+ferroscout scan ./project --format markdown > ferroscout-report.md
 
-# SARIF для GitHub Code Scanning
+# Создать JSON или SARIF
+ferroscout scan ./project --format json > ferroscout-report.json
 ferroscout scan ./project --format sarif > ferroscout.sarif
 
 # Оставить находки Medium и High
 ferroscout scan ./project --severity medium
 
-# Исключить каталоги или относительные пути
+# Исключить известное шумное правило (параметр можно повторять)
+ferroscout scan ./project --exclude-rule FS-TLS-001
+
+# Исключить каталоги сборки и тестовые данные
 ferroscout scan ./project --exclude target --exclude fixtures
 
-# Установить ограничение размера файла (максимум 16 МиБ)
+# Задать максимальный размер файла (не более 16 МиБ)
 ferroscout scan ./project --max-file-size 1048576
 
-# Показать список встроенных правил
+# Показать встроенные правила
 ferroscout rules
 ```
 
@@ -114,80 +108,93 @@ ferroscout rules
 
 | Код | Значение |
 |---:|---|
-| `0` | Выбранных находок нет, контекста достаточно |
+| `0` | После фильтров находок нет, контекста достаточно |
 | `1` | Найдена одна или несколько проблем |
 | `2` | Ошибка сканирования или недостаточно контекста |
 
-Такой интерфейс подходит для скриптов и CI. Сам по себе код `1` не обязан останавливать сборку — это решает workflow.
+Это удобно для скриптов и CI. Решение о том, должна ли находка останавливать сборку, принимает workflow.
 
-## Проверки безопасности
+## Подавление известных исключений
+
+Чтобы скрыть конкретную находку, добавь перед ней комментарий с ID правила и обязательной причиной:
+
+```python
+# ferroscout:ignore-next-line FS-TLS-001 -- локальный тестовый сервер использует тестовый сертификат
+requests.get(url, verify=False)
+```
+
+В JavaScript и Rust используется такой же маркер:
+
+```javascript
+// ferroscout:ignore-next-line FS-XSS-001 -- значение очищается обёрткой выше
+container.innerHTML = sanitizedValue
+```
+
+Поддерживаются комментарии, начинающиеся с `//`, `#`, `/*`, `<!--` или SQL `--`. Пустая причина не принимается. Директива в строковом литерале не сработает. Вместо ID можно указать `*`, но делай так только если исключение действительно относится ко всем правилам на следующей строке.
+
+Отчёт показывает количество подавленных комментариями находок отдельно от результатов, исключённых параметрами командной строки. Исходные файлы не изменяются.
+
+## Встроенные проверки
 
 | Правило | Область | Что ищет |
 |---|---|---|
-| `FS-SECRET-001` | Секреты | Похожие на учётные данные присваивания, Bearer-токены и PEM-маркеры приватных ключей |
-| `FS-XSS-001` | XSS | Маркер недоверенного ввода рядом с динамическим HTML sink |
-| `FS-INJECT-001` | Инъекции | Динамическую сборку SQL и некоторые шаблоны запуска shell-команд |
+| `FS-SECRET-001` | Секреты | Похожие на учётные данные присваивания, Bearer-токены и маркеры приватных ключей |
+| `FS-XSS-001` | XSS | Маркеры недоверенного ввода рядом с динамическими HTML sink |
+| `FS-INJECT-001` | Инъекции | Динамическую сборку SQL и некоторые шаблоны shell-команд |
 | `FS-PATH-001` | Path Traversal | Маркеры недоверенного ввода рядом с файловыми операциями |
 | `FS-SSRF-001` | SSRF | Пользовательские значения рядом с серверными HTTP-запросами |
-| `FS-CORS-001` | CORS | Отражение Origin в файле, где также включены credentials |
+| `FS-CORS-001` | CORS | Отражение Origin в конфигурациях, где также включены credentials |
 | `FS-DESER-001` | Десериализация | Некоторые небезопасные API десериализации |
 | `FS-TLS-001` | TLS | Явное отключение проверки сертификатов |
 | `FS-DEBUG-001` | Debug | Типичные настройки debug-режима |
 | `FS-CRYPTO-001` | Криптография | Некоторые слабые схемы хеширования паролей и небезопасные источники случайности |
 
-### Что содержит находка
+Проверки намеренно консервативны и в основном построчные. Они не строят полные деревья синтаксиса и не доказывают, что ввод контролируется атакующим.
 
-Каждый результат содержит ID правила, критичность, уверенность, путь к файлу, номер строки, фрагмент доказательства, объяснение, возможное влияние и рекомендацию. Похожие на секреты значения маскируются.
+## GitHub Code Scanning
 
-Правила консервативные и построчные. Например, одного `innerHTML` недостаточно, чтобы объявить XSS: текущее правило также ищет рядом маркер недоверенного ввода и отсутствие маркера санитизации. Это всё ещё эвристика, а не полноценный taint analysis.
-
-## GitHub Code Scanning (SARIF)
-
-FerroScout умеет создавать SARIF 2.1.0:
+FerroScout может создавать SARIF 2.1.0:
 
 ```bash
 ferroscout scan . --format sarif > ferroscout.sarif
 ```
 
-В репозитории есть workflow `.github/workflows/code-scanning.yml`: он запускает FerroScout при push в `main` и загружает SARIF в GitHub Code Scanning. Чтобы результат появился во вкладке **Security**, функция Code Scanning должна быть доступна и включена в настройках репозитория. Workflow исключает `tests` и `src/rules`, потому что в этих каталогах находятся намеренно уязвимые синтетические примеры для тестирования самого анализатора.
+Необязательный workflow `.github/workflows/code-scanning.yml` собирает сканер, формирует SARIF и загружает его в GitHub Code Scanning. Workflow исключает `tests` и `src/rules`, где находятся синтетические тестовые примеры и шаблоны правил. Перед включением для чувствительного репозитория проверь workflow: SARIF содержит пути, номера строк и очищенные фрагменты доказательств.
 
-В собственном workflow можно использовать `github/codeql-action/upload-sarif`, выдав задаче разрешение `security-events: write`.
+## Приватность и работа с файлами
 
-## Область и приватность
-
-- Читает файлы локально; сам CLI не выполняет сетевых запросов.
-- Необязательный workflow Code Scanning загружает SARIF-отчёт в GitHub. В нём есть пути, номера строк и фрагменты доказательств; маскирование секретов основано на эвристиках и не даёт гарантии. Перед включением workflow для чувствительных репозиториев проверь его содержимое.
+- CLI читает файлы локально и не выполняет сетевые запросы.
 - Не запускает проверяемые программы, скрипты, shell-команды и сборочные процессы.
-- Не изменяет и не удаляет файлы.
-- Пропускает символические ссылки при обходе каталога и отклоняет симлинк в качестве цели сканирования.
-- Пропускает бинарные файлы и файлы больше заданного лимита (по умолчанию 2 МиБ, жёсткий максимум — 16 МиБ).
-- Проверяет распространённые расширения исходников и конфигураций, а также отдельные файлы `.env`, `Dockerfile`, `.http` и `.har`.
-- По умолчанию исключает типичные каталоги сборки и зависимостей: `.git`, `target`, `node_modules`, `vendor`, `dist`, виртуальные окружения.
-- Маскирует значения, похожие на секреты, в доказательствах. Это не повод хранить секреты в репозитории.
+- Не изменяет и не удаляет проверяемые файлы.
+- Пропускает символические ссылки при обходе и отклоняет симлинк в качестве цели сканирования.
+- Пропускает бинарные файлы и файлы больше установленного лимита (по умолчанию 2 МиБ, максимум 16 МиБ).
+- Распознаёт распространённые расширения исходников и конфигураций, а также отдельные файлы `.env`, `Dockerfile`, `.http` и `.har`.
+- По умолчанию пропускает `.git`, `target`, `node_modules`, `vendor`, `dist` и виртуальные окружения.
+- Маскирует значения, похожие на секреты, в доказательствах. Маскирование эвристическое; не добавляй секреты в репозиторий.
 
 ## Ограничения
 
-FerroScout 0.2.0 использует регулярные выражения и контекст соседних строк. Он не строит полные AST, не выполняет межпроцедурный или межфайловый taint analysis, не разрешает конфигурацию фреймворков, не обращается к сервисам и не проверяет логику авторизации. Поэтому надёжное обнаружение IDOR не заявляется. Совпадение правила требует проверки, а отсутствие совпадений не доказывает безопасность кода.
+FerroScout использует регулярные выражения и контекст соседних строк. Он не выполняет полный AST-анализ, межпроцедурный или межфайловый taint analysis, анализ конфигурации фреймворков, динамические проверки или анализ авторизации. Надёжное обнаружение IDOR не заявляется. Совпадение правила требует контекста, а отсутствие совпадений не доказывает безопасность.
 
 ## Разработка
 
 ```bash
-cargo generate-lockfile
 cargo fmt --all -- --check
 cargo test --all-targets --locked
 cargo clippy --all-targets --locked -- -D warnings
 cargo build --release --locked
 ```
 
-Используй только синтетические тестовые данные. Не добавляй настоящие пароли, токены, приватные ключи и данные пользователей. Перед pull request прочитай [CONTRIBUTING.md](CONTRIBUTING.md).
+Используй только синтетические тестовые данные. Не добавляй настоящие пароли, токены, приватные ключи и пользовательские данные. Перед pull request прочитай [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Ссылки
+## Файлы проекта
 
 - [История изменений](CHANGELOG.md)
 - [Политика безопасности](SECURITY.md)
 - [Как внести вклад](CONTRIBUTING.md)
+- [Поддержка](SUPPORT.md)
 - [Сообщить об ошибке](https://github.com/abduforge/FerroScout/issues/new/choose)
-- [Релизы](https://github.com/abduforge/FerroScout/releases)
+- [Обсуждения](https://github.com/abduforge/FerroScout/discussions)
 
 ## Лицензия
 
