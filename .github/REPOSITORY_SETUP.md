@@ -61,4 +61,4 @@ gh repo edit abduforge/FerroScout \
 
 ## Releases
 
-Create a release by pushing a version tag that matches `Cargo.toml`, for example `v0.3.0`. `.github/workflows/release.yml` tests the tag, builds a Linux x86_64 binary, creates a `.tar.gz` archive, and attaches its SHA-256 checksum.
+Create a release by pushing a version tag that matches `Cargo.toml`, for example `v0.4.0`. `.github/workflows/release.yml` tests the tag, builds a Linux x86_64 binary, creates a `.tar.gz` archive, and attaches its SHA-256 checksum.

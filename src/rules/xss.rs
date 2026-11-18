@@ -15,14 +15,15 @@ pub fn check(path: &Path, content: &str) -> Vec<crate::models::Finding> {
     let sanitizer = Regex::new(r"(?i)(DOMPurify|sanitize|escapeHtml|textContent)")
         .expect("literal regex is valid");
     let lines: Vec<&str> = content.lines().collect();
+    let analysis_lines = super::taint::scrub_lines_for_analysis(content);
     let mut findings = Vec::new();
 
-    for (index, line) in lines.iter().enumerate() {
-        if !sink.is_match(line) {
+    for (index, analysis_line) in analysis_lines.iter().enumerate() {
+        if !sink.is_match(analysis_line) {
             continue;
         }
         let start = index.saturating_sub(3);
-        let context = lines[start..=index].join(" ");
+        let context = analysis_lines[start..=index].join(" ");
         if source.is_match(&context) && !sanitizer.is_match(&context) {
             findings.push(make_finding(
                 path,
@@ -32,8 +33,8 @@ pub fn check(path: &Path, content: &str) -> Vec<crate::models::Finding> {
                 "Untrusted input appears near a dangerous HTML sink",
                 Some("CWE-79"),
                 Confidence::Medium,
-                line,
-                "A known untrusted-input marker occurs within three preceding lines of a dynamic HTML sink. The limited pattern check does not prove that the same value reaches the sink.",
+                lines[index],
+                "A known untrusted-input marker occurs within three preceding lines of a dynamic HTML sink after removing string literals and comments. The limited pattern check does not prove that the same value reaches the sink.",
                 "If attacker-controlled data reaches this sink without context-appropriate sanitization, browser script execution may be possible.",
                 "Prefer textContent or framework-safe rendering. If HTML is required, use a maintained context-aware sanitizer and verify the full data flow.",
             ));
@@ -55,6 +56,38 @@ mod tests {
     #[test]
     fn ignores_static_html_assignment() {
         let code = "element.innerHTML = '<b>Welcome</b>';\n";
+        assert!(check(Path::new("app.js"), code).is_empty());
+    }
+
+    #[test]
+    fn ignores_source_and_sink_text_inside_string_literals() {
+        let code = concat!(
+            "const marker = \"req.query.fake\";\n",
+            "const copy = marker;\n",
+            "element.innerHTML = copy;\n",
+        );
+        assert!(check(Path::new("app.js"), code).is_empty());
+    }
+
+    #[test]
+    fn ignores_source_markers_in_comments() {
+        let code = concat!(
+            "const value = \"fixed\"; // req.query.fake\n",
+            "element.innerHTML = value;\n",
+        );
+        assert!(check(Path::new("app.js"), code).is_empty());
+    }
+
+    #[test]
+    fn ignores_source_and_sink_text_inside_block_comments() {
+        let code = concat!(
+            "/* example of unsafe code\n",
+            "const userInput = req.query.name;\n",
+            "element.innerHTML = userInput;\n",
+            "*/\n",
+            "const value = \"fixed\";\n",
+            "element.innerHTML = value;\n",
+        );
         assert!(check(Path::new("app.js"), code).is_empty());
     }
 

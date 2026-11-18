@@ -338,7 +338,7 @@ mod tests {
     fn json_output_contains_status_and_finding_array() {
         let report = ScanReport {
             tool: "FerroScout".to_owned(),
-            version: "0.3.0".to_owned(),
+            version: "0.4.0".to_owned(),
             target: "./sample".to_owned(),
             status: ScanStatus::NoIssuesFound,
             files_scanned: 1,
@@ -357,7 +357,7 @@ mod tests {
     fn markdown_report_contains_summary_and_escapes_untrusted_text() {
         let report = ScanReport {
             tool: "FerroScout".to_owned(),
-            version: "0.3.0".to_owned(),
+            version: "0.4.0".to_owned(),
             target: "./sample`[x]".to_owned(),
             status: ScanStatus::FindingsFound,
             files_scanned: 1,
@@ -397,7 +397,7 @@ mod tests {
     fn sarif_output_contains_rule_location_and_redacted_evidence() {
         let report = ScanReport {
             tool: "FerroScout".to_owned(),
-            version: "0.3.0".to_owned(),
+            version: "0.4.0".to_owned(),
             target: "./sample".to_owned(),
             status: ScanStatus::FindingsFound,
             files_scanned: 1,

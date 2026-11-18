@@ -46,6 +46,10 @@ pub fn scan_target(target: &Path, options: &ScanOptions) -> io::Result<ScanRepor
         ));
     }
 
+    let mut taint_files = Vec::new();
+    let mut taint_budget = rules::taint::MAX_PROJECT_TAINT_FACTS;
+    let mut taint_truncated = false;
+
     let mut report = ScanReport {
         tool: "FerroScout".to_owned(),
         version: VERSION.to_owned(),
@@ -61,17 +65,56 @@ pub fn scan_target(target: &Path, options: &ScanOptions) -> io::Result<ScanRepor
 
     let max_file_size = options.max_file_size.min(MAX_ALLOWED_FILE_SIZE);
     if metadata.is_file() {
-        scan_one_file(target, max_file_size, &mut report);
+        scan_one_file(
+            target,
+            max_file_size,
+            &mut report,
+            &mut taint_files,
+            &mut taint_budget,
+            &mut taint_truncated,
+        );
     } else if metadata.is_dir() {
         let bounded_options = ScanOptions {
             excludes: options.excludes.clone(),
             max_file_size,
         };
-        scan_directory(target, &bounded_options, &mut report);
+        scan_directory(
+            target,
+            &bounded_options,
+            &mut report,
+            &mut taint_files,
+            &mut taint_budget,
+            &mut taint_truncated,
+        );
     } else {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             "scan target is not a regular file or directory",
+        ));
+    }
+
+    let taint_findings = rules::taint::analyze_project(&taint_files);
+    let mut taint_locations = HashSet::new();
+    let mut active_taint_findings = Vec::new();
+    for finding in taint_findings {
+        if rules::taint::finding_is_suppressed(&taint_files, &finding) {
+            report.suppressed_findings += 1;
+            continue;
+        }
+        if let Some(rule_id) = superseded_pattern_rule(&finding.title) {
+            taint_locations.insert((finding.file.clone(), finding.line, rule_id.to_owned()));
+        }
+        active_taint_findings.push(finding);
+    }
+    report.findings.retain(|finding| {
+        !taint_locations.contains(&(finding.file.clone(), finding.line, finding.rule_id.clone()))
+    });
+    report.findings.extend(active_taint_findings);
+    if taint_truncated {
+        report.scan_errors.push(format!(
+            "data-flow indexing reached a project bound ({} supported files or {} facts); pattern checks continued, but some taint paths may not have been analyzed",
+            rules::taint::MAX_PROJECT_TAINT_FILES,
+            rules::taint::MAX_PROJECT_TAINT_FACTS
         ));
     }
 
@@ -86,7 +129,28 @@ pub fn scan_target(target: &Path, options: &ScanOptions) -> io::Result<ScanRepor
     Ok(report)
 }
 
-fn scan_directory(root: &Path, options: &ScanOptions, report: &mut ScanReport) {
+fn superseded_pattern_rule(title: &str) -> Option<&'static str> {
+    if title.contains("dynamic HTML sink") {
+        Some("FS-XSS-001")
+    } else if title.contains("SQL-like query sink") || title.contains("shell execution sink") {
+        Some("FS-INJECT-001")
+    } else if title.contains("filesystem path sink") {
+        Some("FS-PATH-001")
+    } else if title.contains("HTTP request sink") {
+        Some("FS-SSRF-001")
+    } else {
+        None
+    }
+}
+
+fn scan_directory(
+    root: &Path,
+    options: &ScanOptions,
+    report: &mut ScanReport,
+    taint_files: &mut Vec<rules::taint::TaintFile>,
+    taint_budget: &mut usize,
+    taint_truncated: &mut bool,
+) {
     let mut pending = vec![root.to_path_buf()];
     let excluded: HashSet<String> = options.excludes.iter().cloned().collect();
 
@@ -144,13 +208,27 @@ fn scan_directory(root: &Path, options: &ScanOptions, report: &mut ScanReport) {
             if file_type.is_dir() {
                 pending.push(path);
             } else if file_type.is_file() && is_supported_file(&path) {
-                scan_one_file(&path, options.max_file_size, report);
+                scan_one_file(
+                    &path,
+                    options.max_file_size,
+                    report,
+                    taint_files,
+                    taint_budget,
+                    taint_truncated,
+                );
             }
         }
     }
 }
 
-fn scan_one_file(path: &Path, max_file_size: u64, report: &mut ScanReport) {
+fn scan_one_file(
+    path: &Path,
+    max_file_size: u64,
+    report: &mut ScanReport,
+    taint_files: &mut Vec<rules::taint::TaintFile>,
+    taint_budget: &mut usize,
+    taint_truncated: &mut bool,
+) {
     if !is_supported_file(path) {
         report.entries_skipped += 1;
         return;
@@ -211,6 +289,14 @@ fn scan_one_file(path: &Path, max_file_size: u64, report: &mut ScanReport) {
         } else {
             report.findings.push(finding);
         }
+    }
+    if taint_files.len() < rules::taint::MAX_PROJECT_TAINT_FILES {
+        let (facts, used, truncated) = rules::taint::parse_file(path, &contents, *taint_budget);
+        *taint_budget = (*taint_budget).saturating_sub(used);
+        *taint_truncated |= truncated;
+        taint_files.push(facts);
+    } else {
+        *taint_truncated = true;
     }
 }
 
@@ -434,6 +520,42 @@ mod tests {
         let report = scan_target(&file, &ScanOptions::default()).unwrap();
         assert_eq!(report.findings.len(), 1);
         assert_eq!(report.suppressed_findings, 0);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn detects_taint_flow_across_named_module_imports() {
+        let root = temp_dir();
+        fs::write(
+            root.join("source.js"),
+            "export const userQuery = req.query.search;\n",
+        )
+        .unwrap();
+        fs::write(
+            root.join("view.js"),
+            "import { userQuery as searchTerm } from './source.js';\nconst copy = searchTerm;\nelement.innerHTML = copy;\n",
+        )
+        .unwrap();
+
+        let report = scan_target(&root, &ScanOptions::default()).unwrap();
+        assert!(report.findings.iter().any(|finding| {
+            finding.rule_id == "FS-TAINT-001"
+                && finding.file.ends_with("view.js")
+                && finding.line == 3
+        }));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn source_comment_suppresses_taint_finding() {
+        let root = temp_dir();
+        fs::write(root.join("input.py"), "value = request.args.get('path')\ncopy = value\n# ferroscout:ignore-next-line FS-TAINT-001 -- test path is constrained by fixture setup\nopen(copy)\n").unwrap();
+        let report = scan_target(&root, &ScanOptions::default()).unwrap();
+        assert!(!report
+            .findings
+            .iter()
+            .any(|finding| finding.rule_id == "FS-TAINT-001"));
+        assert_eq!(report.suppressed_findings, 1);
         fs::remove_dir_all(root).unwrap();
     }
 

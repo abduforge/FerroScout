@@ -28,7 +28,7 @@
 
 FerroScout scans source code and configuration files for security-sensitive patterns. Findings include a rule ID, severity, confidence, file location, evidence, potential impact, and a remediation suggestion.
 
-The scanner runs locally and reads files without executing them. It does not contact remote services. Reports can be printed as text, Markdown, JSON, or SARIF 2.1.0.
+The scanner runs locally and reads files without executing them. It does not contact remote services. Reports can be printed as text, Markdown, JSON, or SARIF 2.1.0. A bounded data-flow pass follows simple assignments and named relative ES-module imports to selected sensitive sinks.
 
 > **Scope:** FerroScout is a small heuristic scanner, not a full language-aware SAST engine. A match is a lead for manual review, not proof of exploitability. A clean scan is not a security guarantee.
 
@@ -40,7 +40,8 @@ The scanner runs locally and reads files without executing them. It does not con
 | Platform | Linux |
 | Operation | Local, passive, read-only |
 | Reports | Text · Markdown · JSON · SARIF 2.1.0 |
-| Built-in rule groups | 10 |
+| Built-in rule groups | 11 |
+| Data-flow | Same-file aliases and named relative ES-module imports (bounded heuristic) |
 | License | MIT |
 
 ## Get started
@@ -63,8 +64,8 @@ The binary is `target/release/ferroscout`.
 Linux x86_64 archives and SHA-256 checksums are published on the [Releases page](https://github.com/abduforge/FerroScout/releases). Verify the downloaded archive before extracting it:
 
 ```bash
-sha256sum -c ferroscout-v0.3.0-x86_64-unknown-linux-gnu.tar.gz.sha256
-tar -xzf ferroscout-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
+sha256sum -c ferroscout-v0.4.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+tar -xzf ferroscout-v0.4.0-x86_64-unknown-linux-gnu.tar.gz
 install -Dm755 ferroscout/ferroscout ~/.local/bin/ferroscout
 ```
 
@@ -148,8 +149,11 @@ The report shows how many findings were suppressed by source comments. Command-l
 | `FS-TLS-001` | TLS | Explicitly disabled certificate verification |
 | `FS-DEBUG-001` | Debug | Common debug-mode settings |
 | `FS-CRYPTO-001` | Cryptography | Selected weak password-hash and security-sensitive randomness patterns |
+| `FS-TAINT-001` | Data flow | Request-derived values that reach selected HTML, SQL, shell, file-path, or HTTP sinks through simple assignments or named relative ES-module imports |
 
-These checks are intentionally conservative and mostly line-oriented. They do not build full syntax trees or prove that input is attacker-controlled.
+Most checks remain conservative and pattern-based. `FS-TAINT-001` adds a bounded data-flow pass: it follows simple variable assignments and named relative ES-module imports (`import { value } from "./module"`) across scanned files. The pass is limited to 10,000 files, 50,000 recorded facts, and at most 64 module-propagation rounds. It does not parse complete language syntax, follow function calls, resolve framework sanitizers beyond a few known HTML sanitizers, or prove exploitability.
+
+The taint pass also removes ordinary string contents, single-line comments, and block comments before matching source/sink markers, follows simple variables inside JavaScript template literals and Python f-strings, and avoids treating a partially sanitized expression as fully safe. Sanitizer recognition is deliberately narrow and does not replace a context-aware review.
 
 ## GitHub Code Scanning
 
@@ -174,7 +178,7 @@ The optional `.github/workflows/code-scanning.yml` workflow builds the scanner, 
 
 ## Limitations
 
-FerroScout uses regular expressions and nearby-line context. It does not perform complete AST analysis, interprocedural or cross-file taint analysis, framework-aware configuration resolution, dynamic testing, or authorization analysis. It does not claim reliable IDOR detection. A rule match needs context, and no match does not establish that code is safe.
+FerroScout uses regular expressions, nearby-line context, and a bounded assignment/import data-flow pass. It does not perform complete AST analysis, interprocedural function analysis, general-purpose cross-language taint analysis, framework-aware configuration resolution, dynamic testing, or authorization analysis. It does not claim reliable IDOR detection. A rule match needs context, and no match does not establish that code is safe.
 
 ## Development
 
@@ -189,6 +193,7 @@ Use synthetic fixtures only. Never add real passwords, tokens, private keys, or 
 
 ## Project files
 
+- [Data-flow analysis details](docs/TAINT_ANALYSIS.md)
 - [Changelog](CHANGELOG.md)
 - [Security policy](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

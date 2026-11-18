@@ -42,6 +42,8 @@ jobs:
           mkdir -p dist/ferroscout
           install -m 0755 target/release/ferroscout dist/ferroscout/ferroscout
           cp README.md README_RU.md CHANGELOG.md LICENSE dist/ferroscout/
+          mkdir -p dist/ferroscout/docs
+          cp docs/TAINT_ANALYSIS.md dist/ferroscout/docs/
           ARCHIVE="ferroscout-${GITHUB_REF_NAME}-x86_64-unknown-linux-gnu.tar.gz"
           tar -C dist -czf "dist/$ARCHIVE" ferroscout
           cd dist

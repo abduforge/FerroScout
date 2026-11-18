@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 - 2026-11-18
+
+- Add `FS-TAINT-001`, a bounded data-flow rule for request-derived values reaching selected HTML, SQL, shell, filesystem, and HTTP sinks.
+- Follow simple local assignments and named relative ES-module imports across scanned files.
+- Preserve source locations and variable-chain context in findings; redact evidence as before.
+- Respect source-comment suppressions for taint findings.
+- Bound project-wide data-flow indexing to 50,000 analysis facts and report when the limit is reached.
+- Follow simple variables inside JavaScript template literals and Python f-strings.
+- Ignore string-literal, single-line comment, and block-comment text when matching taint sources and sinks.
+- Keep mixed expressions tainted when a sanitized value is combined with an unsanitized input.
+- Add tests for local aliases, cross-file imports, template interpolation, sanitizer boundaries, string/comment false positives, reassignment, and analysis-budget limits.
+- Update English and Russian documentation with supported flows and known limitations.
+
 ## 0.3.0 - 2026-11-18
 
 - Add Markdown report output for sharing scan results in pull requests and issue discussions.

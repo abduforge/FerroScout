@@ -6,6 +6,7 @@ pub mod injection;
 pub mod path_traversal;
 pub mod secrets;
 pub mod ssrf;
+pub mod taint;
 pub mod tls;
 pub mod xss;
 
@@ -29,43 +30,17 @@ pub fn scan_file(path: &Path, content: &str) -> Vec<Finding> {
 
 pub fn rule_catalog() -> &'static [(&'static str, &'static str)] {
     &[
-        (
-            "FS-SECRET-001",
-            "Potential hardcoded credential or private key material",
-        ),
-        (
-            "FS-XSS-001",
-            "Untrusted input appears near a dangerous HTML sink",
-        ),
-        (
-            "FS-INJECT-001",
-            "Dynamic data appears in a SQL or shell command construction",
-        ),
-        (
-            "FS-PATH-001",
-            "Untrusted data appears in a filesystem path operation",
-        ),
-        (
-            "FS-SSRF-001",
-            "Untrusted data appears to control a server-side request URL",
-        ),
-        (
-            "FS-CORS-001",
-            "Credentialed CORS appears to reflect arbitrary origins",
-        ),
+        ("FS-SECRET-001", "Potential hardcoded credential or private key material"),
+        ("FS-XSS-001", "Untrusted input appears near a dangerous HTML sink"),
+        ("FS-INJECT-001", "Dynamic data appears in a SQL or shell command construction"),
+        ("FS-PATH-001", "Untrusted data appears in a filesystem path operation"),
+        ("FS-SSRF-001", "Untrusted data appears to control a server-side request URL"),
+        ("FS-TAINT-001", "User-controlled data reaches a sensitive sink through simple assignment or module-import flow"),
+        ("FS-CORS-001", "Credentialed CORS appears to reflect arbitrary origins"),
         ("FS-DESER-001", "Potentially unsafe deserialization API"),
-        (
-            "FS-TLS-001",
-            "TLS certificate verification appears to be disabled",
-        ),
-        (
-            "FS-DEBUG-001",
-            "Application debug mode appears to be enabled",
-        ),
-        (
-            "FS-CRYPTO-001",
-            "Potentially weak password hashing or security-sensitive randomness",
-        ),
+        ("FS-TLS-001", "TLS certificate verification appears to be disabled"),
+        ("FS-DEBUG-001", "Application debug mode appears to be enabled"),
+        ("FS-CRYPTO-001", "Potentially weak password hashing or security-sensitive randomness"),
     ]
 }
 
