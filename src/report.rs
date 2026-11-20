@@ -24,6 +24,12 @@ pub fn render_text(report: &ScanReport) -> String {
         report.filtered_findings
     )
     .expect("String writes cannot fail");
+    writeln!(
+        &mut output,
+        "Suppressed by baseline: {}",
+        report.baseline_suppressed_findings
+    )
+    .expect("String writes cannot fail");
     writeln!(&mut output, "Status: {}", status_name(report.status))
         .expect("String writes cannot fail");
 
@@ -148,8 +154,14 @@ pub fn render_markdown(report: &ScanReport) -> String {
     .expect("String writes cannot fail");
     writeln!(
         &mut output,
-        "- **Filtered by CLI options:** {}\n",
+        "- **Filtered by CLI options:** {}",
         report.filtered_findings
+    )
+    .expect("String writes cannot fail");
+    writeln!(
+        &mut output,
+        "- **Suppressed by baseline:** {}\n",
+        report.baseline_suppressed_findings
     )
     .expect("String writes cannot fail");
 
@@ -321,6 +333,7 @@ pub fn render_sarif(report: &ScanReport) -> Result<String, serde_json::Error> {
                 "entriesSkipped": report.entries_skipped,
                 "suppressedFindings": report.suppressed_findings,
                 "filteredFindings": report.filtered_findings,
+                "baselineSuppressedFindings": report.baseline_suppressed_findings,
                 "scanErrors": &report.scan_errors
             }
         }]
@@ -338,13 +351,14 @@ mod tests {
     fn json_output_contains_status_and_finding_array() {
         let report = ScanReport {
             tool: "FerroScout".to_owned(),
-            version: "0.4.0".to_owned(),
+            version: "0.5.0".to_owned(),
             target: "./sample".to_owned(),
             status: ScanStatus::NoIssuesFound,
             files_scanned: 1,
             entries_skipped: 0,
             suppressed_findings: 0,
             filtered_findings: 0,
+            baseline_suppressed_findings: 0,
             findings: Vec::new(),
             scan_errors: Vec::new(),
         };
@@ -357,13 +371,14 @@ mod tests {
     fn markdown_report_contains_summary_and_escapes_untrusted_text() {
         let report = ScanReport {
             tool: "FerroScout".to_owned(),
-            version: "0.4.0".to_owned(),
+            version: "0.5.0".to_owned(),
             target: "./sample`[x]".to_owned(),
             status: ScanStatus::FindingsFound,
             files_scanned: 1,
             entries_skipped: 0,
             suppressed_findings: 1,
             filtered_findings: 2,
+            baseline_suppressed_findings: 0,
             findings: vec![Finding {
                 severity: Severity::Medium,
                 title: "Unsafe *rendering*".to_owned(),
@@ -381,8 +396,8 @@ mod tests {
         };
         let markdown = render_markdown(&report);
         assert!(markdown.contains("# FerroScout Security Report"));
-        assert!(markdown.contains("Suppressed by source comments: 1"));
-        assert!(markdown.contains("Filtered by CLI options: 2"));
+        assert!(markdown.contains("**Suppressed by source comments:** 1"));
+        assert!(markdown.contains("**Filtered by CLI options:** 2"));
         assert!(markdown.contains("Unsafe \\*rendering\\*"));
         assert!(markdown.contains("sample\\`\\[x\\]"));
         assert!(markdown_escape("<script>&").contains("&lt;script&gt;&amp;"));
@@ -397,13 +412,14 @@ mod tests {
     fn sarif_output_contains_rule_location_and_redacted_evidence() {
         let report = ScanReport {
             tool: "FerroScout".to_owned(),
-            version: "0.4.0".to_owned(),
+            version: "0.5.0".to_owned(),
             target: "./sample".to_owned(),
             status: ScanStatus::FindingsFound,
             files_scanned: 1,
             entries_skipped: 0,
             suppressed_findings: 0,
             filtered_findings: 0,
+            baseline_suppressed_findings: 0,
             findings: vec![Finding {
                 severity: Severity::High,
                 title: "Potential hardcoded credential".to_owned(),

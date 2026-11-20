@@ -40,6 +40,7 @@ FerroScout проверяет исходный код и конфигураци�
 | Платформа | Linux |
 | Режим | Локальный, пассивный, только чтение |
 | Отчёты | Text · Markdown · JSON · SARIF 2.1.0 |
+| Baseline | Скрывает уже проверенные находки и показывает новые |
 | Группы правил | 11 |
 | Анализ потоков | Алиасы в одном файле и именованные относительные ES-module импорты (ограниченная эвристика) |
 | Лицензия | MIT |
@@ -64,8 +65,8 @@ cargo build --release --locked
 Архивы Linux x86_64 и SHA-256 публикуются на странице [Releases](https://github.com/abduforge/FerroScout/releases). После скачивания проверь архив:
 
 ```bash
-sha256sum -c ferroscout-v0.4.0-x86_64-unknown-linux-gnu.tar.gz.sha256
-tar -xzf ferroscout-v0.4.0-x86_64-unknown-linux-gnu.tar.gz
+sha256sum -c ferroscout-v0.5.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+tar -xzf ferroscout-v0.5.0-x86_64-unknown-linux-gnu.tar.gz
 install -Dm755 ferroscout/ferroscout ~/.local/bin/ferroscout
 ```
 
@@ -101,6 +102,15 @@ ferroscout scan ./project --max-file-size 1048576
 
 # Показать встроенные правила
 ferroscout rules
+
+# Сохранить текущие известные находки
+ferroscout baseline create ./project --output .ferroscout-baseline.json
+
+# Показывать только новые находки
+ferroscout scan ./project --baseline .ferroscout-baseline.json
+
+# Обновить baseline после проверки (заменяет существующий файл)
+ferroscout baseline create ./project --output .ferroscout-baseline.json --force
 ```
 
 Полная справка: `ferroscout --help`.
@@ -154,6 +164,22 @@ container.innerHTML = sanitizedValue
 Большинство проверок остаются консервативными и основаны на шаблонах. `FS-TAINT-001` добавляет ограниченный анализ потоков: он отслеживает простые присваивания и именованные относительные ES-module импорты (`import { value } from "./module"`) между проверяемыми файлами. Например, анализ может проследить `req.query.name` через экспорт переменной, импорт с псевдонимом и далее до `element.innerHTML`. Лимит — 10 000 файлов, 50 000 записей и не более 64 проходов распространения между модулями. Это не полный языковой парсер: анализ не отслеживает вызовы функций, не понимает все sanitizer-функции фреймворков и не доказывает возможность эксплуатации.
 
 При анализе потоков обычное содержимое строк, однострочные комментарии и блочные комментарии убираются перед поиском источников и sink. Простые переменные внутри JavaScript template literals и Python f-strings учитываются. Если выражение объединяет очищенное значение с другим неочищенным вводом, оно остаётся tainted. Распознавание sanitizer намеренно ограничено и не заменяет проверку подходящего контекстного экранирования. Подробнее — в [описании анализа потоков](docs/TAINT_ANALYSIS.md).
+
+## Базовые находки (Baseline)
+
+Сначала сохрани текущие проверенные находки:
+
+```bash
+ferroscout baseline create ./project --output .ferroscout-baseline.json
+```
+
+При следующих запусках передавай baseline, чтобы в отчёте оставались новые находки:
+
+```bash
+ferroscout scan ./project --baseline .ferroscout-baseline.json
+```
+
+Отпечаток строится по ID правила, пути относительно цели сканирования и очищенному доказательству. Номер строки не учитывается, поэтому добавление строк выше находки не делает её новой. Одинаковые повторяющиеся находки учитываются отдельно. В baseline хранятся только отпечатки и метаданные, а не исходный фрагмент кода или абсолютный путь к проекту. Перед публикацией или коммитом проверь файл baseline. Чтобы заменить существующий baseline после проверки обновлённых результатов, используй `baseline create ... --force`. Это инструмент сортировки находок, а не гарантия безопасности.
 
 ## GitHub Code Scanning
 

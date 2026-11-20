@@ -1,4 +1,4 @@
-# FerroScout data-flow analysis (0.4.0)
+# FerroScout data-flow analysis (0.5.0)
 
 `FS-TAINT-001` adds a deliberately limited taint pass. It is intended to find simple source-to-sink paths that line-based rules may miss.
 

@@ -61,6 +61,8 @@ pub struct ScanReport {
     pub suppressed_findings: usize,
     /// Findings removed by command-line severity or rule filters.
     pub filtered_findings: usize,
+    /// Findings hidden because they already exist in the supplied baseline.
+    pub baseline_suppressed_findings: usize,
     pub findings: Vec<Finding>,
     pub scan_errors: Vec<String>,
 }

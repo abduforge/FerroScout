@@ -40,6 +40,7 @@ The scanner runs locally and reads files without executing them. It does not con
 | Platform | Linux |
 | Operation | Local, passive, read-only |
 | Reports | Text · Markdown · JSON · SARIF 2.1.0 |
+| Baselines | Hide previously reviewed findings; surface new findings |
 | Built-in rule groups | 11 |
 | Data-flow | Same-file aliases and named relative ES-module imports (bounded heuristic) |
 | License | MIT |
@@ -64,8 +65,8 @@ The binary is `target/release/ferroscout`.
 Linux x86_64 archives and SHA-256 checksums are published on the [Releases page](https://github.com/abduforge/FerroScout/releases). Verify the downloaded archive before extracting it:
 
 ```bash
-sha256sum -c ferroscout-v0.4.0-x86_64-unknown-linux-gnu.tar.gz.sha256
-tar -xzf ferroscout-v0.4.0-x86_64-unknown-linux-gnu.tar.gz
+sha256sum -c ferroscout-v0.5.0-x86_64-unknown-linux-gnu.tar.gz.sha256
+tar -xzf ferroscout-v0.5.0-x86_64-unknown-linux-gnu.tar.gz
 install -Dm755 ferroscout/ferroscout ~/.local/bin/ferroscout
 ```
 
@@ -101,6 +102,15 @@ ferroscout scan ./project --max-file-size 1048576
 
 # List the rules included in this build
 ferroscout rules
+
+# Record currently known findings
+ferroscout baseline create ./project --output .ferroscout-baseline.json
+
+# Show only findings that are new since the baseline
+ferroscout scan ./project --baseline .ferroscout-baseline.json
+
+# Refresh after reviewing/fixing findings (replaces the baseline)
+ferroscout baseline create ./project --output .ferroscout-baseline.json --force
 ```
 
 Use `ferroscout --help` for the complete CLI reference.
@@ -154,6 +164,22 @@ The report shows how many findings were suppressed by source comments. Command-l
 Most checks remain conservative and pattern-based. `FS-TAINT-001` adds a bounded data-flow pass: it follows simple variable assignments and named relative ES-module imports (`import { value } from "./module"`) across scanned files. The pass is limited to 10,000 files, 50,000 recorded facts, and at most 64 module-propagation rounds. It does not parse complete language syntax, follow function calls, resolve framework sanitizers beyond a few known HTML sanitizers, or prove exploitability.
 
 The taint pass also removes ordinary string contents, single-line comments, and block comments before matching source/sink markers, follows simple variables inside JavaScript template literals and Python f-strings, and avoids treating a partially sanitized expression as fully safe. Sanitizer recognition is deliberately narrow and does not replace a context-aware review.
+
+## Finding baselines
+
+Create a baseline after reviewing the findings that are already known:
+
+```bash
+ferroscout baseline create ./project --output .ferroscout-baseline.json
+```
+
+Then pass it to later scans to keep those existing findings out of the report:
+
+```bash
+ferroscout scan ./project --baseline .ferroscout-baseline.json
+```
+
+Fingerprints use the rule ID, path relative to the scan target, and redacted evidence. Line numbers are intentionally excluded, so inserting lines above a finding does not make it new. Repeated identical findings are counted separately. The baseline contains fingerprints and review metadata, not source evidence or absolute scan-root paths. Review a baseline before sharing or committing it. To replace an existing baseline after reviewing the updated findings, use `baseline create ... --force`. Baselines are a triage aid, not a security guarantee.
 
 ## GitHub Code Scanning
 

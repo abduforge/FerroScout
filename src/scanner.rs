@@ -4,7 +4,7 @@ use crate::VERSION;
 use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::{self, Read};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub const MAX_ALLOWED_FILE_SIZE: u64 = 16 * 1024 * 1024;
 
@@ -59,6 +59,7 @@ pub fn scan_target(target: &Path, options: &ScanOptions) -> io::Result<ScanRepor
         entries_skipped: 0,
         suppressed_findings: 0,
         filtered_findings: 0,
+        baseline_suppressed_findings: 0,
         findings: Vec::new(),
         scan_errors: Vec::new(),
     };
@@ -414,6 +415,7 @@ pub fn filter_findings(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn temp_dir() -> PathBuf {
@@ -447,7 +449,7 @@ mod tests {
         let root = temp_dir();
         let binary = root.join("binary.js");
         let large = root.join("large.py");
-        fs::write(&binary, &[0_u8, 1, 2]).unwrap();
+        fs::write(&binary, [0_u8, 1, 2]).unwrap();
         fs::write(&large, "x".repeat(128)).unwrap();
         let options = ScanOptions {
             excludes: Vec::new(),

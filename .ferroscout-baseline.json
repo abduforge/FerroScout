@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "tool": "FerroScout",
+  "tool_version": "0.5.0",
+  "findings": [
+    {
+      "fingerprint": "72c13d62dc1e89ae",
+      "rule_id": "FS-CORS-001",
+      "file": "src/rules/cors.rs",
+      "line": 41,
+      "title": "Credentialed CORS appears to reflect arbitrary origins"
+    },
+    {
+      "fingerprint": "7f8b4b4c8eb79d11",
+      "rule_id": "FS-CRYPTO-001",
+      "file": "src/rules/crypto.rs",
+      "line": 8,
+      "title": "Weak hash appears to be used for password material"
+    },
+    {
+      "fingerprint": "4cee9de2375de226",
+      "rule_id": "FS-CRYPTO-001",
+      "file": "src/rules/crypto.rs",
+      "line": 32,
+      "title": "Non-cryptographic randomness appears to generate a security value"
+    },
+    {
+      "fingerprint": "947de4404f3bb521",
+      "rule_id": "FS-CRYPTO-001",
+      "file": "src/rules/crypto.rs",
+      "line": 48,
+      "title": "Weak hash appears to be used for password material"
+    },
+    {
+      "fingerprint": "059891da047dc671",
+      "rule_id": "FS-SECRET-001",
+      "file": "src/rules/crypto.rs",
+      "line": 56,
+      "title": "Potential hardcoded credential"
+    },
+    {
+      "fingerprint": "08b24cea1a86cf22",
+      "rule_id": "FS-CRYPTO-001",
+      "file": "src/rules/crypto.rs",
+      "line": 56,
+      "title": "Non-cryptographic randomness appears to generate a security value"
+    },
+    {
+      "fingerprint": "e6efed91d356cbc0",
+      "rule_id": "FS-DEBUG-001",
+      "file": "src/rules/debug.rs",
+      "line": 33,
+      "title": "Application debug mode appears to be enabled"
+    },
+    {
+      "fingerprint": "c9d1e870151be115",
+      "rule_id": "FS-DESER-001",
+      "file": "src/rules/deserialization.rs",
+      "line": 36,
+      "title": "Potentially unsafe deserialization API"
+    },
+    {
+      "fingerprint": "29443ee7b66dcee8",
+      "rule_id": "FS-INJECT-001",
+      "file": "src/rules/injection.rs",
+      "line": 51,
+      "title": "Dynamic data appears in SQL query construction"
+    },
+    {
+      "fingerprint": "48638ae16045c787",
+      "rule_id": "FS-INJECT-001",
+      "file": "src/rules/injection.rs",
+      "line": 57,
+      "title": "Dynamic data appears in a shell command operation"
+    },
+    {
+      "fingerprint": "e5137c65d63ede0c",
+      "rule_id": "FS-SECRET-001",
+      "file": "src/rules/mod.rs",
+      "line": 99,
+      "title": "Potential hardcoded credential"
+    },
+    {
+      "fingerprint": "c7627658eb06e23d",
+      "rule_id": "FS-PATH-001",
+      "file": "src/rules/path_traversal.rs",
+      "line": 37,
+      "title": "Untrusted data appears in a filesystem path operation"
+    },
+    {
+      "fingerprint": "7ba289724d41a20f",
+      "rule_id": "FS-SECRET-001",
+      "file": "src/rules/secrets.rs",
+      "line": 108,
+      "title": "Potential hardcoded credential"
+    },
+    {
+      "fingerprint": "d03e8d3fe0e7788f",
+      "rule_id": "FS-SECRET-001",
+      "file": "src/rules/secrets.rs",
+      "line": 125,
+      "title": "Private key material appears in source"
+    },
+    {
+      "fingerprint": "ea631e08e6ca7c3c",
+      "rule_id": "FS-SECRET-001",
+      "file": "src/rules/secrets.rs",
+      "line": 134,
+      "title": "Bearer token appears in source or a captured HTTP sample"
+    },
+    {
+      "fingerprint": "34d3696e6facf28d",
+      "rule_id": "FS-SSRF-001",
+      "file": "src/rules/ssrf.rs",
+      "line": 37,
+      "title": "Potential user-controlled server-side request URL"
+    },
+    {
+      "fingerprint": "d6d6df97054196c0",
+      "rule_id": "FS-INJECT-001",
+      "file": "src/rules/taint.rs",
+      "line": 855,
+      "title": "Dynamic data appears in a shell command operation"
+    },
+    {
+      "fingerprint": "163a95f490013a52",
+      "rule_id": "FS-INJECT-001",
+      "file": "src/rules/taint.rs",
+      "line": 859,
+      "title": "Dynamic data appears in a shell command operation"
+    },
+    {
+      "fingerprint": "b316657d816635c3",
+      "rule_id": "FS-TLS-001",
+      "file": "src/rules/tls.rs",
+      "line": 8,
+      "title": "TLS certificate verification appears to be disabled"
+    },
+    {
+      "fingerprint": "97225195f34c0819",
+      "rule_id": "FS-TLS-001",
+      "file": "src/rules/tls.rs",
+      "line": 34,
+      "title": "TLS certificate verification appears to be disabled"
+    },
+    {
+      "fingerprint": "8aa53bab5d059e38",
+      "rule_id": "FS-TLS-001",
+      "file": "src/scanner.rs",
+      "line": 495,
+      "title": "TLS certificate verification appears to be disabled"
+    },
+    {
+      "fingerprint": "48b64c1ec8e83704",
+      "rule_id": "FS-TLS-001",
+      "file": "src/scanner.rs",
+      "line": 508,
+      "title": "TLS certificate verification appears to be disabled"
+    },
+    {
+      "fingerprint": "8a43df32ca612d77",
+      "rule_id": "FS-TLS-001",
+      "file": "src/scanner.rs",
+      "line": 521,
+      "title": "TLS certificate verification appears to be disabled"
+    },
+    {
+      "fingerprint": "ea35c6af27db573e",
+      "rule_id": "FS-TLS-001",
+      "file": "tests/cli.rs",
+      "line": 31,
+      "title": "TLS certificate verification appears to be disabled"
+    },
+    {
+      "fingerprint": "4cff94df6bb297ce",
+      "rule_id": "FS-TLS-001",
+      "file": "tests/cli.rs",
+      "line": 83,
+      "title": "TLS certificate verification appears to be disabled"
+    }
+  ]
+}
