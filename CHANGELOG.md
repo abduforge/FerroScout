@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 - 2026-11-20
+
+- Add persistent finding baselines with `baseline create` and `scan --baseline`.
+- Keep previously reviewed findings out of subsequent reports while retaining newly introduced findings.
+- Use deterministic path/rule/evidence fingerprints that survive line-number shifts and count duplicate occurrences.
+- Store only fingerprints and redacted finding metadata in baseline files; do not store source evidence or absolute scan-root paths.
+- Reject baseline creation after incomplete scans and require `--force` to replace an existing baseline.
+- Add baseline matching, duplicate-count, line-shift, and evidence-omission tests.
+
 ## 0.4.0 - 2026-11-18
 
 - Add `FS-TAINT-001`, a bounded data-flow rule for request-derived values reaching selected HTML, SQL, shell, filesystem, and HTTP sinks.

@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
 
 use clap::Parser;
-use ferroscout::cli::{Cli, Commands, OutputFormat, SeverityArg};
+use ferroscout::baseline::{apply_baseline, build_baseline, load_baseline, save_baseline};
+use ferroscout::cli::{BaselineCommands, Cli, Commands, OutputFormat, SeverityArg};
 use ferroscout::models::Severity;
 use ferroscout::report::{render_json, render_markdown, render_sarif, render_text};
 use ferroscout::rules::rule_catalog;
@@ -33,6 +34,7 @@ fn run(cli: Cli) -> Result<u8, String> {
             severity,
             exclude,
             exclude_rule,
+            baseline,
             max_file_size,
         }) => {
             if max_file_size == 0 || max_file_size > MAX_ALLOWED_FILE_SIZE {
@@ -56,6 +58,10 @@ fn run(cli: Cli) -> Result<u8, String> {
             };
             let mut report = scan_target(&path, &options)
                 .map_err(|error| format!("cannot scan {}: {error}", path.display()))?;
+            if let Some(baseline_path) = baseline.as_deref() {
+                let baseline_data = load_baseline(baseline_path)?;
+                apply_baseline(&mut report, &baseline_data, &path)?;
+            }
             let minimum = severity.map(|value| match value {
                 SeverityArg::Low => Severity::Low,
                 SeverityArg::Medium => Severity::Medium,
@@ -81,6 +87,47 @@ fn run(cli: Cli) -> Result<u8, String> {
             } else {
                 Ok(0)
             }
+        }
+        Some(Commands::Baseline {
+            command:
+                BaselineCommands::Create {
+                    path,
+                    output,
+                    force,
+                    exclude,
+                    max_file_size,
+                },
+        }) => {
+            if max_file_size == 0 || max_file_size > MAX_ALLOWED_FILE_SIZE {
+                return Err(format!(
+                    "--max-file-size must be between 1 and {MAX_ALLOWED_FILE_SIZE} bytes"
+                ));
+            }
+            if output.exists() && !force {
+                return Err(format!(
+                    "baseline {} already exists; pass --force only after reviewing the new findings",
+                    output.display()
+                ));
+            }
+            let options = ScanOptions {
+                excludes: exclude,
+                max_file_size,
+            };
+            let report = scan_target(&path, &options)
+                .map_err(|error| format!("cannot scan {}: {error}", path.display()))?;
+            if report.files_scanned == 0 || !report.scan_errors.is_empty() {
+                return Err(format!(
+                    "refusing to create a baseline from an incomplete scan ({} files scanned, {} scan warnings/errors)",
+                    report.files_scanned, report.scan_errors.len()
+                ));
+            }
+            let baseline = build_baseline(&report, &path);
+            save_baseline(&output, &baseline)?;
+            println!(
+                "Baseline created: {}\nRecorded findings: {}\nThe baseline stores fingerprints and redacted metadata, not source evidence.",
+                output.display(), report.findings.len()
+            );
+            Ok(0)
         }
         None => {
             println!("{}", Cli::command().render_help());

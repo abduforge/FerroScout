@@ -407,7 +407,7 @@ fn strip_comments_preserving_strings(input: &str, in_block_comment: &mut bool) -
         }
 
         let previous_is_space = index == 0 || characters[index - 1].is_whitespace();
-        if (current == '/' && next == Some('*')) {
+        if current == '/' && next == Some('*') {
             *in_block_comment = true;
             output.push(' ');
             index += 2;
